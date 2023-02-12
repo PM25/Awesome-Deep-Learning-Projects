@@ -12,7 +12,7 @@ import torchvision.transforms as transforms
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # define data transformation
-print("==> Preparing data..")
+print("\n==> Preparing data..")
 transform_train = transforms.Compose(
     [
         transforms.RandomCrop(32, padding=4),
@@ -40,7 +40,7 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=128, shuffle=
 classes = ["Plane", "Car", "Bird", "Cat", "Deer", "Dog", "Frog", "Horse", "Ship", "Truck"]
 
 # building model
-print("==> Building model..")
+print("\n==> Building model..")
 model = models.resnet18(num_classes=10, weights=None)
 model.to(device)
 
@@ -49,17 +49,18 @@ if torch.cuda.is_available():
     model = nn.DataParallel(model)
     cudnn.benchmark = True
 
-# define loss function, optimizer and learning rate scheduler
+# define the loss function, optimizer and learning rate scheduler
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
 lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
 
 
 def train():
-    # put the model in training mode
-    model.train()
+    """
+    Train the model.
+    """
+    model.train()  # put the model in training mode
 
-    # initialize variables
     step = 0
     running_loss = 0.0
 
@@ -68,18 +69,18 @@ def train():
         images, true_labels = images.to(device), true_labels.to(device)
 
         optimizer.zero_grad()  # zero the parameter gradients
-        outputs = model(images)  # make predictions using the model
-        loss = criterion(outputs, true_labels)  # calculate the loss
+        outputs = model(images)  # make predictions
+        loss = criterion(outputs, true_labels)  # calculate loss
 
         # backpropagate the loss to update the model parameters
         loss.backward()
         optimizer.step()
 
-        # update variables
+        # update step and running loss
         step += 1
         running_loss += loss.item()
 
-        # print the average training loss every 100 batches
+        # print the average loss every 100 steps
         if step % 100 == 0:
             running_loss = running_loss / 100
             print(f"[{step}/{len(train_loader)}] training loss: {running_loss:.3f}")
