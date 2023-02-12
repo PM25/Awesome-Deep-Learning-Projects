@@ -1,82 +1,102 @@
-import numpy as np
-import matplotlib.pyplot as plt
-
+"""Train CIFAR10 with PyTorch."""
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.utils as utils
 import torchvision.models as models
+import torch.backends.cudnn as cudnn
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
-# Check if GPU is available, otherwise use CPU
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# check if GPU is available,otherwise use CPU
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# define data transformation
+print("==> Preparing data..")
+transform_train = transforms.Compose(
+    [
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ]
+)
+
+transform_test = transforms.Compose(
+    [
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ]
+)
+
+# load CIFAR10 datasets
+train_dataset = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform_train)
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2)
+
+test_dataset = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform_test)
+test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=2)
+
+# classes in the CIFAR10 dataset
+classes = ["Plane", "Car", "Bird", "Cat", "Deer", "Dog", "Frog", "Horse", "Ship", "Truck"]
+
+# building model
+print("==> Building model..")
+model = models.resnet18(num_classes=10, weights=None)
+model.to(device)
+
+# if GPU is available, use DataParallel to increase the training speed
+if torch.cuda.is_available():
+    model = nn.DataParallel(model)
+    cudnn.benchmark = True
+
+# define loss function, optimizer and learning rate scheduler
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
+lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
 
 
-def main():
-    # define the data transformation
-    data_transform = transforms.Compose(
-        [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-    )
+def train():
+    # put the model in training mode
+    model.train()
 
-    # load CIFAR10 training and testing datasets
-    train_dataset = datasets.CIFAR10(root="./data", train=True, download=True, transform=data_transform)
-    train_loader = utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True)
+    # initialize variables
+    step = 0
+    running_loss = 0.0
 
-    test_dataset = datasets.CIFAR10(root="./data", train=False, download=True, transform=data_transform)
-    test_loader = utils.data.DataLoader(test_dataset, batch_size=32, shuffle=False)
+    for images, true_labels in train_loader:
+        # transfer data to the device the model is using
+        images, true_labels = images.to(device), true_labels.to(device)
 
-    # classes in the CIFAR10 dataset
-    classes = ["Plane", "Car", "Bird", "Cat", "Deer", "Dog", "Frog", "Horse", "Ship", "Truck"]
+        optimizer.zero_grad()  # zero the parameter gradients
+        outputs = model(images)  # make predictions using the model
+        loss = criterion(outputs, true_labels)  # calculate the loss
 
-    # define model, loss function and optimizer
-    model = models.resnet18(num_classes=10, weights=None).to(DEVICE)
-    criterion = nn.CrossEntropyLoss().to(DEVICE)
-    optimizer = optim.SGD(model.parameters(), lr=0.02, momentum=0.9)
+        # backpropagate the loss to update the model parameters
+        loss.backward()
+        optimizer.step()
 
-    print("\nStart Training")
+        # update variables
+        step += 1
+        running_loss += loss.item()
 
-    for epoch in range(10):  # loop over the dataset multiple times
-        step = 0
-        running_loss = 0.0
-
-        for images, labels in train_loader:
-            # transfer data to the device the model is using
-            images, labels = images.to(DEVICE), labels.to(DEVICE)
-
-            optimizer.zero_grad()  # zero the parameter gradients
-            outputs = model(images)  # make predictions using the model
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            # print training loss every 100 batches
-            step += 1
-            running_loss += loss.item()
-            if step % 100 == 0:
-                running_loss = running_loss / 100
-                print(f"[epoch:{epoch + 1}][{step}/{len(train_loader)}] training loss: {running_loss:.3f}")
-                running_loss = 0.0
-
-        evaluate(model, test_loader)
-
-    print("Finished Training")
-
-    evaluate(model, test_loader)
-    plot_images_and_preds(model, test_loader, classes)
+        # print the average training loss every 100 batches
+        if step % 100 == 0:
+            running_loss = running_loss / 100
+            print(f"[{step}/{len(train_loader)}] training loss: {running_loss:.3f}")
+            running_loss = 0.0
 
 
 @torch.no_grad()
-def evaluate(model, test_loader):
+def evaluate():
     """
     Evaluate the model's accuracy on the test set.
     """
-    model = model.eval()  # put the model in evaluation mode
+    model.eval()  # put the model in evaluation mode
     correct = 0
     total = 0
 
     for images, true_labels in test_loader:
-        images, true_labels = images.to(DEVICE), true_labels.to(DEVICE)
+        images, true_labels = images.to(device), true_labels.to(device)
 
         outputs = model(images)
         _, pred_labels = torch.max(outputs.data, 1)
@@ -87,31 +107,9 @@ def evaluate(model, test_loader):
     print(f"Test Accuracy: {100 * correct / total:.2f}%")
 
 
-def plot_images_and_preds(model, test_loader, classes):
-    """
-    Plot 9 randomly selected images from the test dataset along with their true labels and predicted labels.
-    Green title means the prediction was correct, red title means it was incorrect.
-    """
-    fig, axs = plt.subplots(3, 3, figsize=(12, 12))
-
-    # get a batch of test images and their labels
-    images, true_labels = next(iter(test_loader))
-
-    outputs = model(images.to(DEVICE))
-    _, pred_labels = torch.max(outputs, 1)
-
-    # plot each image and its prediction
-    for image, true_label, pred_label, ax in zip(images, true_labels, pred_labels, axs.flatten()):
-        image = image / 2 + 0.5  # unnormalize the image
-        image_np = image.cpu().numpy()
-
-        ax.imshow(np.transpose(image_np, (1, 2, 0)))  # Plot the image
-        title_color = "green" if true_label == pred_label else "red"
-        ax.set_title(f"True: {classes[true_label]} | Predicted: {classes[pred_label]}", color=title_color)
-
-    plt.savefig("./predictions.png")
-    print("Plot saved to ./predictions.png")
-
-
 if __name__ == "__main__":
-    main()
+    for epoch in range(100):
+        print(f"\n[Epoch: {epoch} / 100] [LR: {lr_scheduler.get_last_lr()[0]:.5f}]")
+        train()
+        evaluate()
+        lr_scheduler.step()
