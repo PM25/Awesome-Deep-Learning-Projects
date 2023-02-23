@@ -10,7 +10,7 @@ This repository contains a collection of deep learning projects that serve as ex
 
 ## Vision
 
-- Image Classification
+- [Image Classification](./vision/image%20classification)
 - Object Detection
 - Super Resolution
 - Image Generation
