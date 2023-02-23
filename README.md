@@ -1,19 +1,22 @@
-# Awesome Deep Learning Projects with PyTorch
+# Awesome Deep Learning Projects
 
 This repository contains a collection of deep learning projects that serve as examples of what deep learning is capable of and give you inspiration for your own projects.
 
-## Table of Contents
+## Table of Content
 
-* [Vision](#vision)
-* [Text](#text)
-* [Audio](#audio)
+- [Vision](#vision)
+- [Text](#text)
+- [Audio](#audio)
+- [Generative Models](#generative-models)
+- [Semi-Supervised Learning](#semi-supervised-learning)
+- [Reinforcement Learning](#reinforcement-learning)
+- [Unsupervised Learning](#unsupervised-learning)
 
 ## Vision
 
 - [Image Classification](./vision/image%20classification)
 - Object Detection
 - Super Resolution
-- Image Generation
 
 ## Text
 
@@ -23,3 +26,18 @@ This repository contains a collection of deep learning projects that serve as ex
 
 - Audio Classification
 
+## Generative Models
+
+- Image Generation
+- Text Generation
+- Audio Generation
+
+## Semi-Supervised Learning
+
+- Image Classification
+- Text Classification
+- Audio Classification
+
+## Reinforcement Learning
+
+## Unsupervised Learning
