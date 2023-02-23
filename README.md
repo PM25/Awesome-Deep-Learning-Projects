@@ -14,13 +14,13 @@ This repository contains a collection of deep learning projects that serve as ex
 
 ## Vision
 
-- [Image Classification](./vision/image%20classification)
+- [Image Classification](./vision/image%20classification) - Classifying images into a set of categories.
 - Object Detection
 - Super Resolution
 
 ## Text
 
-- Text Classification
+- Text Classification - Classifying text into a set of categories.
 
 ## Audio
 
