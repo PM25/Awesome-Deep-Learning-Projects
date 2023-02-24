@@ -42,6 +42,8 @@ classes = ["Plane", "Car", "Bird", "Cat", "Deer", "Dog", "Frog", "Horse", "Ship"
 # building model
 print("\n==> Building model..")
 model = models.resnet18(num_classes=10, weights=None)
+model.conv1 = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)    
+model.maxpool = nn.Identity()
 model.to(device)
 
 # if GPU is available, use DataParallel to increase the training speed
