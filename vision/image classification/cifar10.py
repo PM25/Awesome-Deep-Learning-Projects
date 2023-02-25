@@ -11,23 +11,22 @@ import torchvision.transforms as transforms
 # check if GPU is available,otherwise use CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+Epoch = 30
+LR = 0.1
+
 # define data transformation
 print("\n==> Preparing data..")
-transform_train = transforms.Compose(
-    [
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ]
-)
+transform_train = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
 
-transform_test = transforms.Compose(
-    [
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ]
-)
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
 
 # load CIFAR10 datasets
 train_dataset = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform_train)
@@ -42,7 +41,7 @@ classes = ["Plane", "Car", "Bird", "Cat", "Deer", "Dog", "Frog", "Horse", "Ship"
 # building model
 print("\n==> Building model..")
 model = models.resnet18(num_classes=10, weights=None)
-model.conv1 = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)    
+model.conv1 = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
 model.maxpool = nn.Identity()
 model.to(device)
 
@@ -53,8 +52,8 @@ if torch.cuda.is_available():
 
 # define the loss function, optimizer and learning rate scheduler
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
+optimizer = optim.SGD(model.parameters(), lr=LR, momentum=0.9, weight_decay=5e-4)
+lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=Epoch)
 
 
 def train():
@@ -107,12 +106,12 @@ def evaluate():
         total += true_labels.size(0)
         correct += (pred_labels == true_labels).sum().item()
 
-    print(f"Test Accuracy: {100 * correct / total:.2f}%")
+    print(f"Validation Accuracy: {100 * correct / total:.2f}%")
 
 
 if __name__ == "__main__":
-    for epoch in range(100):
-        print(f"\n[Epoch: {epoch} / 100] [LR: {lr_scheduler.get_last_lr()[0]:.5f}]")
+    for epoch in range(Epoch):
+        print(f"\n[Epoch: {epoch} / {Epoch}] [LR: {lr_scheduler.get_last_lr()[0]:.5f}]")
         train()
         evaluate()
         lr_scheduler.step()
