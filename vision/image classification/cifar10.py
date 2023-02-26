@@ -9,10 +9,11 @@ import torchvision.transforms as transforms
 
 
 # check if GPU is available,otherwise use CPU
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-Epoch = 30
+EPOCHS = 30
 LR = 0.1
+BATCH_SIZE = 128
 
 # define data transformation
 print("\n==> Preparing data..")
@@ -30,10 +31,10 @@ transform_test = transforms.Compose([
 
 # load CIFAR10 datasets
 train_dataset = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform_train)
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2)
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
 
 test_dataset = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform_test)
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=2)
+test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
 
 # classes in the CIFAR10 dataset
 classes = ["Plane", "Car", "Bird", "Cat", "Deer", "Dog", "Frog", "Horse", "Ship", "Truck"]
@@ -43,7 +44,7 @@ print("\n==> Building model..")
 model = models.resnet18(num_classes=10, weights=None)
 model.conv1 = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
 model.maxpool = nn.Identity()
-model.to(device)
+model.to(DEVICE)
 
 # if GPU is available, use DataParallel to increase the training speed
 if torch.cuda.is_available():
@@ -53,7 +54,7 @@ if torch.cuda.is_available():
 # define the loss function, optimizer and learning rate scheduler
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=LR, momentum=0.9, weight_decay=5e-4)
-lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=Epoch)
+lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
 
 def train():
@@ -67,7 +68,7 @@ def train():
 
     for images, true_labels in train_loader:
         # transfer data to the device the model is using
-        images, true_labels = images.to(device), true_labels.to(device)
+        images, true_labels = images.to(DEVICE), true_labels.to(DEVICE)
 
         optimizer.zero_grad()  # zero the parameter gradients
         outputs = model(images)  # make predictions
@@ -98,7 +99,7 @@ def evaluate():
     total = 0
 
     for images, true_labels in test_loader:
-        images, true_labels = images.to(device), true_labels.to(device)
+        images, true_labels = images.to(DEVICE), true_labels.to(DEVICE)
 
         outputs = model(images)
         _, pred_labels = torch.max(outputs.data, 1)
@@ -110,8 +111,8 @@ def evaluate():
 
 
 if __name__ == "__main__":
-    for epoch in range(Epoch):
-        print(f"\n[Epoch: {epoch} / {Epoch}] [LR: {lr_scheduler.get_last_lr()[0]:.5f}]")
+    for epoch in range(EPOCHS):
+        print(f"\n[Epoch: {epoch} / {EPOCHS}] [LR: {lr_scheduler.get_last_lr()[0]:.5f}]")
         train()
         evaluate()
         lr_scheduler.step()
