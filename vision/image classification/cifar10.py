@@ -1,4 +1,4 @@
-"""Train CIFAR10 with PyTorch."""
+"""Train CIFAR10 image classification with PyTorch."""
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,9 +11,11 @@ import torchvision.transforms as transforms
 # check if GPU is available,otherwise use CPU
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# define hyperparameters
 EPOCHS = 30
 LR = 0.1
 BATCH_SIZE = 128
+LOGGING_STEPS = 100
 
 # define data transformation
 print("\n==> Preparing data..")
@@ -39,7 +41,7 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE, s
 # classes in the CIFAR10 dataset
 classes = ["Plane", "Car", "Bird", "Cat", "Deer", "Dog", "Frog", "Horse", "Ship", "Truck"]
 
-# building model
+# build the model
 print("\n==> Building model..")
 model = models.resnet18(num_classes=10, weights=None)
 model.conv1 = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
@@ -64,7 +66,7 @@ def train():
     model.train()  # put the model in training mode
 
     step = 0
-    running_loss = 0.0
+    train_loss = 0.0
 
     for images, true_labels in train_loader:
         # transfer data to the device the model is using
@@ -78,15 +80,15 @@ def train():
         loss.backward()
         optimizer.step()
 
-        # update step and running loss
+        # update step and training loss
         step += 1
-        running_loss += loss.item()
+        train_loss += loss.item()
 
-        # print the average loss every 100 steps
-        if step % 100 == 0:
-            running_loss = running_loss / 100
-            print(f"[{step}/{len(train_loader)}] training loss: {running_loss:.3f}")
-            running_loss = 0.0
+        # print the average loss every LOGGING_STEPS steps
+        if step % LOGGING_STEPS == 0:
+            train_loss = train_loss / LOGGING_STEPS
+            print(f"[{step}/{len(train_loader)}] training loss = {train_loss:.3f}")
+            train_loss = 0.0
 
 
 @torch.no_grad()
