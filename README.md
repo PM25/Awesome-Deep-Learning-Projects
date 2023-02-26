@@ -20,7 +20,7 @@ This repository contains a collection of deep learning projects that serve as ex
 
 ## Text
 
-- Text Classification - Classifying text into a set of categories.
+- [Text Classification](./text/text%20classification) - Classifying text into a set of categories.
 
 ## Audio
 
