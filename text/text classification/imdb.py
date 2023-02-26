@@ -11,7 +11,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from datasets import load_dataset
 
 # check if GPU is available,otherwise use CPU
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 Epoch = 2
 BATCH_SIZE = 4
@@ -71,9 +71,9 @@ def train():
 
     for batch in train_loader:
         # transfer data to the device the model is using
-        input_ids = batch["input_ids"].to(device)
-        attention_mask = batch["attention_mask"].to(device)
-        true_labels = batch["label"].to(device)
+        input_ids = batch["input_ids"].to(DEVICE)
+        attention_mask = batch["attention_mask"].to(DEVICE)
+        true_labels = batch["label"].to(DEVICE)
 
         optimizer.zero_grad()  # zero the parameter gradients
         outputs = model(
@@ -101,7 +101,7 @@ def train():
             train_loss /= LOGGING_STEPS
             train_acc /= LOGGING_STEPS
             print(
-                f"[{step}/{len(train_loader)}][LR: {lr_scheduler.get_last_lr()[0]:.7f}] training loss = {train_loss:.3f}, training acc = {train_acc:.2f}"
+                f"[{step}/{len(train_loader)}][LR: {lr_scheduler.get_last_lr()[0]:.7f}] training loss = {train_loss:.3f}, training acc = {train_acc:.3f}"
             )
             train_loss = train_acc = 0.0
 
@@ -116,9 +116,9 @@ def evaluate():
     total = 0
 
     for batch in tqdm(test_loader, desc="Evaluating"):
-        input_ids = batch["input_ids"].to(device)
-        attention_mask = batch["attention_mask"].to(device)
-        true_labels = batch["label"].to(device)
+        input_ids = batch["input_ids"].to(DEVICE)
+        attention_mask = batch["attention_mask"].to(DEVICE)
+        true_labels = batch["label"].to(DEVICE)
 
         outputs = model(
             input_ids=input_ids, attention_mask=attention_mask, labels=true_labels
