@@ -13,7 +13,7 @@ from datasets import load_dataset
 # check if GPU is available,otherwise use CPU
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-Epoch = 2
+Epoch = 1
 BATCH_SIZE = 4
 LR = 2e-5
 LR_WARMUP_STEPS = 1000
@@ -86,15 +86,15 @@ def train():
         optimizer.step()
         lr_scheduler.step()
 
-        # update step and training loss
-        step += 1
-        train_loss += loss.item()
-
         # calculate training accuracy
         logits = outputs["logits"]
         _, pred_labels = torch.max(logits.data, 1)
         correct = (pred_labels == true_labels).sum().item()
         train_acc += correct / true_labels.size(0)
+
+        # update step and training loss
+        step += 1
+        train_loss += loss.item()
 
         # print the average loss every LOGGING_STEPS steps
         if step % LOGGING_STEPS == 0:
