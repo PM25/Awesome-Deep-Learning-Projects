@@ -1,4 +1,4 @@
-"""Train IMDB text classification with PyTorch."""
+"""IMDB sentiment analysis (text classification) with PyTorch."""
 from tqdm import tqdm
 
 import torch
@@ -17,6 +17,7 @@ Epoch = 1
 BATCH_SIZE = 4
 LR = 2e-5
 LR_WARMUP_STEPS = 1000
+WEIGHT_DECAY = 0
 LOGGING_STEPS = 100
 
 # Load IMDB dataset
@@ -41,6 +42,7 @@ test_dataset = tokenized_imdb_dataset["test"]
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
 
+# classes in the IMDB dataset
 id2label = {0: "negative", 1: "positive"}
 
 # build the model
@@ -53,7 +55,7 @@ if torch.cuda.is_available():
     cudnn.benchmark = True
 
 # define the optimizer and learning rate scheduler
-optimizer = optim.AdamW(model.parameters(), lr=LR)
+optimizer = optim.AdamW(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 lr_scheduler = transformers.get_linear_schedule_with_warmup(
     optimizer, num_warmup_steps=LR_WARMUP_STEPS, num_training_steps=Epoch * len(train_loader)
 )

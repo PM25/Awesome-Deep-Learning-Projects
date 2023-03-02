@@ -1,4 +1,4 @@
-"""Train CIFAR10 image classification with PyTorch."""
+"""CIFAR10 image classification with PyTorch."""
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -14,6 +14,8 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # define hyperparameters
 EPOCHS = 30
 LR = 0.1
+MOMENTUM = 0.9
+WEIGHT_DECAY = 5e-4
 BATCH_SIZE = 128
 LOGGING_STEPS = 100
 
@@ -39,7 +41,7 @@ test_dataset = datasets.CIFAR10(root="./data", train=False, download=True, trans
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
 
 # classes in the CIFAR10 dataset
-classes = ["Plane", "Car", "Bird", "Cat", "Deer", "Dog", "Frog", "Horse", "Ship", "Truck"]
+id2label = {0: "Plane", 1: "Car", 2: "Bird", 3: "Cat", 4: "Deer", 5: "Dog", 6: "Frog", 7: "Horse", 8: "Ship", 9: "Truck"}
 
 # build the model
 print("\n==> Building model..")
@@ -55,7 +57,7 @@ if torch.cuda.is_available():
 
 # define the loss function, optimizer and learning rate scheduler
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=LR, momentum=0.9, weight_decay=5e-4)
+optimizer = optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
 
