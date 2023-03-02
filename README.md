@@ -14,9 +14,15 @@ This repository contains a collection of deep learning projects that serve as ex
 
 ## Vision
 
+### Image
+
 - [Image Classification](./vision/image%20classification) - Classifying images into different categories.
-- Object Detection
-- Super Resolution
+- Image Object Detection - Locating and identifying objects within an image.
+- Image Super Resolution - Enhancing the quality of an image.
+
+### Video
+
+- Video Classification
 
 ## Text
 
