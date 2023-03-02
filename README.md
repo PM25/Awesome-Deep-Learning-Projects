@@ -1,4 +1,4 @@
-# Awesome Deep Learning Projects
+# Deep Learning Projects
 
 This repository contains a collection of deep learning projects that serve as examples of what deep learning is capable of and give you inspiration for your own projects.
 
@@ -14,13 +14,14 @@ This repository contains a collection of deep learning projects that serve as ex
 
 ## Vision
 
-- [Image Classification](./vision/image%20classification) - Classifying images into a set of categories.
+- [Image Classification](./vision/image%20classification) - Classifying images into different categories.
 - Object Detection
 - Super Resolution
 
 ## Text
 
-- [Text Classification](./text/text%20classification) - Classifying text into a set of categories.
+- [Text Classification](./text/text%20classification) - Sorting text (e.g. sentence, paragraph) into different categories.
+- [Token Classification](./text/token%20classification) - Labeling individual words or parts of words within text.
 
 ## Audio
 
