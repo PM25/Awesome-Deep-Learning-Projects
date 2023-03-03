@@ -27,11 +27,11 @@ imdb_dataset = load_dataset("imdb")
 tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
 # tokenize the dataset
-def tokenize_fn(examples):
+def preprocess_fn(examples):
     return tokenizer(examples["text"], truncation=True, padding="max_length")
 
 
-tokenized_imdb_dataset = imdb_dataset.map(tokenize_fn, batched=True)
+tokenized_imdb_dataset = imdb_dataset.map(preprocess_fn, batched=True)
 tokenized_imdb_dataset = tokenized_imdb_dataset.with_format(
     type="torch", columns=["input_ids", "attention_mask", "label"]
 )

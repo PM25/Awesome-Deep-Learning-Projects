@@ -26,8 +26,8 @@ wnut17_dataset = load_dataset("wnut_17")
 
 tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
-
-def tokenize_fn(examples):
+# tokenize and sets the label for each token in the dataset
+def preprocess_fn(examples):
     tokenized_examples = tokenizer(
         examples["tokens"], truncation=True, padding="max_length", is_split_into_words=True
     )
@@ -56,7 +56,7 @@ def tokenize_fn(examples):
     return tokenized_examples
 
 
-tokenized_wnut17_dataset = wnut17_dataset.map(tokenize_fn, batched=True)
+tokenized_wnut17_dataset = wnut17_dataset.map(preprocess_fn, batched=True)
 tokenized_wnut17_dataset = tokenized_wnut17_dataset.with_format(
     type="torch", columns=["input_ids", "attention_mask", "labels"]
 )
