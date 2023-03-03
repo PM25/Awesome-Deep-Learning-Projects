@@ -1,4 +1,4 @@
-"""IMDB sentiment analysis (text classification) with PyTorch."""
+"""WNUT 2017 named entity recognition (token classification) with PyTorch."""
 from tqdm import tqdm
 
 import torch
@@ -7,7 +7,7 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 
 import transformers
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForTokenClassification
 from datasets import load_dataset
 
 # check if GPU is available,otherwise use CPU
@@ -16,38 +16,64 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 Epoch = 1
 BATCH_SIZE = 4
 LR = 2e-5
-LR_WARMUP_STEPS = 1000
-WEIGHT_DECAY = 0
+LR_WARMUP_STEPS = 200
+WEIGHT_DECAY = 5e-4
 LOGGING_STEPS = 100
 
-# load IMDB dataset
+# load WNUT 2017 dataset
 print("\n==> Preparing data..")
-imdb_dataset = load_dataset("imdb")
+wnut17_dataset = load_dataset("wnut_17")
 
 tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
-# tokenize the dataset
+
 def tokenize_fn(examples):
-    return tokenizer(examples["text"], truncation=True, padding="max_length")
+    tokenized_examples = tokenizer(
+        examples["tokens"], truncation=True, padding="max_length", is_split_into_words=True
+    )
+
+    labels = []
+    for idx in range(len(examples["tokens"])):
+        word_idxes = tokenized_examples.word_ids(
+            batch_index=idx
+        )  # map each token in the example to its corresponding word
+        tags = examples["ner_tags"][idx]  # get the NER tags for the current example
+
+        # create a list to store the labels for each token in the current example
+        label = []
+        previous_word_idx = None
+        for word_idx in word_idxes:
+            # if the current token is the first token in a given word, label it with the corresponding NER tag
+            if word_idx is not None and word_idx != previous_word_idx:
+                label.append(tags[word_idx])
+            else:  # otherwise, set the label to -100
+                label.append(-100)
+            previous_word_idx = word_idx
+        labels.append(label)
+
+    tokenized_examples["labels"] = labels
+
+    return tokenized_examples
 
 
-tokenized_imdb_dataset = imdb_dataset.map(tokenize_fn, batched=True)
-tokenized_imdb_dataset = tokenized_imdb_dataset.with_format(
-    type="torch", columns=["input_ids", "attention_mask", "label"]
+tokenized_wnut17_dataset = wnut17_dataset.map(tokenize_fn, batched=True)
+tokenized_wnut17_dataset = tokenized_wnut17_dataset.with_format(
+    type="torch", columns=["input_ids", "attention_mask", "labels"]
 )
-train_dataset = tokenized_imdb_dataset["train"]
-test_dataset = tokenized_imdb_dataset["test"]
+train_dataset = tokenized_wnut17_dataset["train"]
+test_dataset = tokenized_wnut17_dataset["test"]
 
 # create data loaders
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
 
-# classes in the IMDB dataset
-id2label = {0: "negative", 1: "positive"}
+label_names = wnut17_dataset["train"].features[f"ner_tags"].feature.names
+id2label = {idx: label for idx, label in enumerate(label_names)}
+# id2label = {0: 'O', 1: 'B-corporation', 2: 'I-corporation', 3: 'B-creative-work', ..., 11: 'B-product', 12: 'I-product'}
 
 # build the model
 print("\n==> Building model..")
-model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=2)
+model = AutoModelForTokenClassification.from_pretrained("distilbert-base-uncased", num_labels=13)
 
 # if GPU is available, use DataParallel to increase the training speed
 if torch.cuda.is_available():
@@ -75,7 +101,7 @@ def train():
         # transfer data to the device the model is using
         input_ids = batch["input_ids"].to(DEVICE)
         attention_mask = batch["attention_mask"].to(DEVICE)
-        true_labels = batch["label"].to(DEVICE)
+        true_labels = batch["labels"].to(DEVICE)
 
         optimizer.zero_grad()  # zero the parameter gradients
         outputs = model(
@@ -90,7 +116,12 @@ def train():
 
         # calculate training accuracy
         logits = outputs["logits"]
-        _, pred_labels = torch.max(logits.data, 1)
+        _, pred_labels = torch.max(logits.data, 2)
+
+        label_idxes = true_labels.flatten() != -100
+        pred_labels = pred_labels.flatten()[label_idxes]
+        true_labels = true_labels.flatten()[label_idxes]
+
         correct = (pred_labels == true_labels).sum().item()
         train_acc += correct / true_labels.size(0)
 
@@ -120,13 +151,17 @@ def evaluate():
     for batch in tqdm(test_loader, desc="Evaluating"):
         input_ids = batch["input_ids"].to(DEVICE)
         attention_mask = batch["attention_mask"].to(DEVICE)
-        true_labels = batch["label"].to(DEVICE)
+        true_labels = batch["labels"].to(DEVICE)
 
         outputs = model(
             input_ids=input_ids, attention_mask=attention_mask, labels=true_labels
         )  # make predictions
         logits = outputs["logits"]
-        _, pred_labels = torch.max(logits.data, 1)
+        _, pred_labels = torch.max(logits.data, 2)
+
+        label_idxes = true_labels.flatten() != -100
+        pred_labels = pred_labels.flatten()[label_idxes]
+        true_labels = true_labels.flatten()[label_idxes]
 
         total += true_labels.size(0)
         correct += (pred_labels == true_labels).sum().item()
