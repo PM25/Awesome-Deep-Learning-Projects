@@ -61,3 +61,11 @@ This repository contains a collection of deep learning projects that showcase th
 ## Multi-Task Learning
 
 ## Few-Shot Learning
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for more details.
+
+## Acknowledgments
+I'd like to thank the following projects for reference and inspiration in building this project.
+
+* [HuggingFace](https://github.com/huggingface/transformers)
