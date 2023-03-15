@@ -2,6 +2,9 @@
 
 This repository contains a collection of deep learning projects that showcase the capabilities of deep learning and provide inspiration for your own projects.
 
+> **Warning**
+> This project is currently in development, and many examples are not yet available.
+
 ## Table of Content
 
 - [Vision](#vision)
